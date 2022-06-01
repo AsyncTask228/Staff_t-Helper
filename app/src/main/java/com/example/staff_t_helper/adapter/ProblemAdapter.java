@@ -58,6 +58,7 @@ public class ProblemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
 
         Problem problem = NoDb.PROBLEM_LIST.get(position);
+
         ((MyHolder) holder).id.setText(String.valueOf(problem.getId()));
         ((MyHolder) holder).problem.setText(problem.getName());
         ((MyHolder) holder).person_name.setText(problem.getPerson().getName());

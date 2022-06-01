@@ -23,7 +23,7 @@ public class LibraryApiVolley implements LibraryApi {
 
     public static final String API_TEST = "API_TEST";
     private final Context context;
-    public static final String BASE_URL = "http://192.168.1.104:8081";
+    public static final String BASE_URL = "http://192.168.1.102:8081";
     private Response.ErrorListener errorListener;
 
     public LibraryApiVolley(Context context) {
@@ -63,8 +63,12 @@ public class LibraryApiVolley implements LibraryApi {
                                 Problem problem = ProblemMapper.ProblemFromJson(jsonObject);
                                 NoDb.PROBLEM_LIST.add(problem);
                             }
+                            try {
+                                ((MainActivity)context).updateAdapter();
+                            }catch (Exception e){
+                                Log.e("fillProblem", e.getMessage());
+                            }
 
-                            ((MainActivity)context).updateAdapter();
                             Log.d(API_TEST, NoDb.PROBLEM_LIST.toString());
 
                         } catch (JSONException e){
@@ -77,7 +81,6 @@ public class LibraryApiVolley implements LibraryApi {
         );
 
         requestQueue.add(arrayRequest);
-
     }
 
     @Override

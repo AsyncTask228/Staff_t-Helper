@@ -1,42 +1,61 @@
 package com.example.staff_t_helper;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.DividerItemDecoration;
-import androidx.recyclerview.widget.ItemTouchHelper;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.NotificationCompat;
+import androidx.recyclerview.widget.ItemTouchHelper;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
+import androidx.work.WorkRequest;
+
 import com.example.staff_t_helper.adapter.ProblemAdapter;
-import com.example.staff_t_helper.domain.Person;
 import com.example.staff_t_helper.domain.Problem;
 import com.example.staff_t_helper.nodb.NoDb;
 import com.example.staff_t_helper.rest.LibraryApiVolley;
+import com.example.staff_t_helper.service.MyWorkManager;
 import com.example.staff_t_helper.utillity.NetworkChangeListener;
 
-import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
 
     private RecyclerView rvProblem;
     private ProblemAdapter problemAdapter;
 
-    NetworkChangeListener networkChangeListener = new NetworkChangeListener();
+    public NetworkChangeListener networkChangeListener = new NetworkChangeListener();
+
+      private int getCount = NoDb.PROBLEM_LIST.size();
+
+      private NotificationManager notificationManager;
+     private static final String  CHANNEL_ID = "CHANNEL_ID";
 
     private boolean threadStatus;
 
     private ItemTouchHelper.SimpleCallback simpleCallback;
     private LibraryApiVolley libraryApiVolley;
 
+    private WorkManager workManager;
+    private WorkRequest workRequest;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
 
         threadStatus = true;
 
@@ -50,9 +69,9 @@ public class MainActivity extends AppCompatActivity {
         rvProblem.setAdapter(problemAdapter);
 
 
-        Thread myThread = new MyThread();
-        myThread.setDaemon(true);
-        myThread.start();
+//        Thread myThread = new MyThread();
+//        myThread.setDaemon(true);
+//        myThread.start();
 
 
         simpleCallback = new ItemTouchHelper.SimpleCallback(
@@ -95,37 +114,73 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
     }
 
+//    public class MyThread extends Thread {
+//
+//        @Override
+//        public void run() {
+//            request();
+//        }
+//
+//        public void request() {
+//            while (threadStatus) {
+//                try {
+//                    libraryApiVolley.fillProblem();
+//
+//                    //создание уведомления
+//                    if (getCount != NoDb.PROBLEM_LIST.size()) {
+//                        notificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+//                        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+//                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+//                        PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+//                        NotificationCompat.Builder notificationBuilder =
+//                                new NotificationCompat.Builder(getApplicationContext(), "CHANNEL_ID")
+//                                        .setAutoCancel(false)
+//                                        .setSmallIcon(R.mipmap.ic_launcher)
+//                                        .setWhen(System.currentTimeMillis())
+//                                        .setContentIntent(pendingIntent)
+//                                        .setContentTitle("ТРЕБУЕТСЯ ПОМОЩЬ")
+//                                        .setContentText("Срочно окажите помощь")
+//                                        .setPriority(1);
+//                        createChannelIfNeeded(notificationManager);
+//                        notificationManager.notify(1, notificationBuilder.build());
+//                        getCount = NoDb.PROBLEM_LIST.size();
+//                    }
+//
+//                    sleep(1 * 1000);
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }
+//    }
+
+    public static void createChannelIfNeeded(NotificationManager manager){
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+            NotificationChannel notificationChannel = new NotificationChannel(CHANNEL_ID, CHANNEL_ID, NotificationManager.IMPORTANCE_DEFAULT);
+            manager.createNotificationChannel(notificationChannel);
+        }
+
+    }
+
     @Override
     protected void onStop() {
-        unregisterReceiver(networkChangeListener);
         super.onStop();
-    }
-
-    private class MyThread extends Thread {
-        @Override
-        public void run() {
-
-            while (threadStatus) {
-                try {
-                    libraryApiVolley.fillProblem();
-                    sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        threadStatus = false;
+        Log.i("MY_TAG", "onStop()");
+        //создание фонового потока
+        workManager = WorkManager.getInstance(getApplicationContext());
+        //workRequest = new PeriodicWorkRequest.Builder(MyWorkManager.class, 15, TimeUnit.MINUTES).build();
+        workManager.enqueue(new OneTimeWorkRequest.Builder(MyWorkManager.class).build());
     }
 
     @Override
     protected void onDestroy() {
+        //создание фонового потока
+//        workManager = WorkManager.getInstance(getApplicationContext());
+        //workRequest = new PeriodicWorkRequest.Builder(MyWorkManager.class, 15, TimeUnit.MINUTES).build();
+//        workManager.enqueue(new OneTimeWorkRequest.Builder(MyWorkManager.class).build());
+        Log.i("MY_TAG", "onDestroy()");
         super.onDestroy();
-        threadStatus = false;
     }
 }
 

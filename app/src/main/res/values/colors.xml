@@ -9,4 +9,5 @@
     <color name="white">#FFFFFFFF</color>
     <color name="edit_color">#E9EEED</color>
     <color name="text_color">#2AAA84</color>
+    <color name="internet_back">#D3D3D3</color>
 </resources>
