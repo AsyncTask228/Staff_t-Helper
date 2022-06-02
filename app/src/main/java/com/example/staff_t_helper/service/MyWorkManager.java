@@ -5,6 +5,8 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
+import android.net.Uri;
 import android.os.Build;
 import android.util.Log;
 
@@ -29,6 +31,7 @@ public class MyWorkManager extends Worker {
 
     private NotificationManager notificationManager;
     private static final String  CHANNEL_ID = "CHANNEL_ID";
+
 
     public MyWorkManager(@NonNull Context context, @NonNull WorkerParameters workerParams) {
         super(context, workerParams);
@@ -59,7 +62,7 @@ public class MyWorkManager extends Worker {
                                           .setContentIntent(pendingIntent)
                                           .setContentTitle("ТРЕБУЕТСЯ ПОМОЩЬ")
                                           .setContentText("Срочно окажите помощь")
-                                          .setPriority(1);
+                                          .setPriority(NotificationCompat.PRIORITY_DEFAULT);
                           createChannelIfNeeded(notificationManager);
                           notificationManager.notify(1, notificationBuilder.build());
                           getCount = NoDb.PROBLEM_LIST.size();

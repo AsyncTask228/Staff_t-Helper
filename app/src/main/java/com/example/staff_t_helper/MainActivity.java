@@ -6,7 +6,10 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Color;
+import android.media.RingtoneManager;
 import android.net.ConnectivityManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -38,10 +41,10 @@ public class MainActivity extends AppCompatActivity {
 
     public NetworkChangeListener networkChangeListener = new NetworkChangeListener();
 
-      private int getCount = NoDb.PROBLEM_LIST.size();
+    private int getCount = NoDb.PROBLEM_LIST.size();
 
-      private NotificationManager notificationManager;
-     private static final String  CHANNEL_ID = "CHANNEL_ID";
+    private NotificationManager notificationManager;
+    private static final String CHANNEL_ID = "CHANNEL_ID";
 
     private boolean threadStatus;
 
@@ -69,9 +72,9 @@ public class MainActivity extends AppCompatActivity {
         rvProblem.setAdapter(problemAdapter);
 
 
-//        Thread myThread = new MyThread();
-//        myThread.setDaemon(true);
-//        myThread.start();
+        Thread myThread = new MyThread();
+        myThread.setDaemon(true);
+        myThread.start();
 
 
         simpleCallback = new ItemTouchHelper.SimpleCallback(
@@ -114,49 +117,49 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
     }
 
-//    public class MyThread extends Thread {
-//
-//        @Override
-//        public void run() {
-//            request();
-//        }
-//
-//        public void request() {
-//            while (threadStatus) {
-//                try {
-//                    libraryApiVolley.fillProblem();
-//
-//                    //создание уведомления
-//                    if (getCount != NoDb.PROBLEM_LIST.size()) {
-//                        notificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
-//                        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-//                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-//                        PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-//                        NotificationCompat.Builder notificationBuilder =
-//                                new NotificationCompat.Builder(getApplicationContext(), "CHANNEL_ID")
-//                                        .setAutoCancel(false)
-//                                        .setSmallIcon(R.mipmap.ic_launcher)
-//                                        .setWhen(System.currentTimeMillis())
-//                                        .setContentIntent(pendingIntent)
-//                                        .setContentTitle("ТРЕБУЕТСЯ ПОМОЩЬ")
-//                                        .setContentText("Срочно окажите помощь")
-//                                        .setPriority(1);
-//                        createChannelIfNeeded(notificationManager);
-//                        notificationManager.notify(1, notificationBuilder.build());
-//                        getCount = NoDb.PROBLEM_LIST.size();
-//                    }
-//
-//                    sleep(1 * 1000);
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        }
-//    }
+    public class MyThread extends Thread {
 
-    public static void createChannelIfNeeded(NotificationManager manager){
+        @Override
+        public void run() {
+            request();
+        }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+        public void request() {
+            while (threadStatus) {
+                try {
+                    libraryApiVolley.fillProblem();
+
+                    //создание уведомления
+                    if (getCount != NoDb.PROBLEM_LIST.size()) {
+                        notificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+                        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+                        PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+                        NotificationCompat.Builder notificationBuilder =
+                                new NotificationCompat.Builder(getApplicationContext(), "CHANNEL_ID")
+                                        .setAutoCancel(false)
+                                        .setSmallIcon(R.mipmap.ic_launcher)
+                                        .setWhen(System.currentTimeMillis())
+                                        .setContentIntent(pendingIntent)
+                                        .setContentTitle("ТРЕБУЕТСЯ ПОМОЩЬ")
+                                        .setContentText("Срочно окажите помощь")
+                                        .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+                        createChannelIfNeeded(notificationManager);
+                        notificationManager.notify(1, notificationBuilder.build());
+                        getCount = NoDb.PROBLEM_LIST.size();
+                    }
+
+                    sleep(1 * 1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public static void createChannelIfNeeded(NotificationManager manager) {
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel notificationChannel = new NotificationChannel(CHANNEL_ID, CHANNEL_ID, NotificationManager.IMPORTANCE_DEFAULT);
             manager.createNotificationChannel(notificationChannel);
         }
@@ -167,20 +170,16 @@ public class MainActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         Log.i("MY_TAG", "onStop()");
+
         //создание фонового потока
         workManager = WorkManager.getInstance(getApplicationContext());
-        //workRequest = new PeriodicWorkRequest.Builder(MyWorkManager.class, 15, TimeUnit.MINUTES).build();
         workManager.enqueue(new OneTimeWorkRequest.Builder(MyWorkManager.class).build());
     }
 
     @Override
     protected void onDestroy() {
-        //создание фонового потока
-//        workManager = WorkManager.getInstance(getApplicationContext());
-        //workRequest = new PeriodicWorkRequest.Builder(MyWorkManager.class, 15, TimeUnit.MINUTES).build();
-//        workManager.enqueue(new OneTimeWorkRequest.Builder(MyWorkManager.class).build());
+
         Log.i("MY_TAG", "onDestroy()");
         super.onDestroy();
     }
 }
-
